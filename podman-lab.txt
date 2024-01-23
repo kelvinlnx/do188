@@ -1,0 +1,102 @@
+# Sample Podman Lab
+# by Kelvin Lai
+
+podman search registry.access.redhat.com/ubi8
+podman pull registry.access.redhat.com/ubi8/ubi:8.0
+podman images
+
+# Check how many layers in original ubi image
+podman inspect ubi:8.0 | sed -n '/Layers/,/\]/{//!p;}' | wc -l 
+
+# Create container named ubi-web with an interactive shell session
+podman run --name ubi-web -it ubi:8.0 /bin/bash
+
+# While inside the container, install the apache webserve & configure it to listen to port 8080
+yum install -y httpd
+yum clean all
+sed -i 's/^Listen 80 *$/Listen 8080/' /etc/httpd/conf/httpd.conf
+exit
+
+# Check the containers, you shouldn't see the ubi-web because it's already dead
+podman ps
+
+# List all containers
+podman ps -a
+
+# Save the ubi-web container as an image that we can use in future
+# Earlier versions of podman requires that the CMD list doesn't have space after the comma(,)
+podman commit -a "Student Name" -c 'ENTRYPOINT ["httpd"]' -c 'CMD ["-D","FOREGROUND"]' -c "EXPOSE 8080" ubi-web quay.io/<YOUR_USERNAME>/ubi-web:1.0
+
+# List out the images
+podman images
+
+# Check how many Layers compared to the original image
+podman inspect ubi-web:1.0 | sed -n '/Layers/,/\]/{//!p;}' | wc -l
+
+# Create directory to host the website
+cd
+mkdir myweb
+echo Hello World > myweb/index.html
+
+# Start your webserver
+#   in the background
+#   map your localhost port 12345 to containers port 8080
+#   map myweb directory to /var/www/html
+#   and name it myweb
+podman run -d -p 12345:8080 -v ~/myweb:/var/www/html:Z --name myweb ubi-web:1.0
+
+# Verify the container is running
+podman ps
+
+sudo setenforce 0
+
+# Test your website
+curl localhost:12345
+
+# Stop the container
+podman stop myweb
+
+# Verify
+podman ps		# container not listed
+podman ps -a		# container listed
+
+# Remove the container and verify it's removed
+podman rm myweb
+podman ps -a
+
+# Extra:
+# Having Fun Time - learning ENTRYPOINT and CMD
+# 
+podman commit -c 'CMD ["date", "+%d/%m/%Y"]' ubi-web:1.0 mydate:1.0
+podman commit -c 'ENTRYPOINT ["date"]' -c 'CMD ["+%d/%m/%Y"]' ubi-web:1.0 mydate:2.0
+podman run mydate:1.0
+podman run mydate:1.0 +%A		# doesn't work
+podman run mydate:1.0 date +%A
+podman run mydate:1.0 echo Hello World
+podman run mydate:2.0
+podman run mydate:2.0 echo Hi		# doesn't work, because podman treats this as ENTRYPOINT + <YOUR ARGS> = date echo Hi
+podman run mydate:2.0 +%A		# same as date +%A - the +%d/%m/%Y got overwritten
+
+# Remove ALL containers
+podman rm $(podman ps -aq)
+
+# Push your image to your repository in the registry
+podman images
+podman push quay.io/<USER_NAME>/ubi-web:1.0       # This will fail because you've not logged in to the registry
+podman login quay.io                              # Key in your USER_NAME and PASSWORD
+
+# Try pushing again after login
+podman push quay.io/<USER_NAME>/ubi-web:1.0
+
+# Check if image is in your quay.io repository
+
+# Remove ALL images
+podman rmi -f $(podman images -q)
+podman ps -a
+podman images
+
+# Try retrieving your image
+podman pull quay.io/<USER_NAME>/ubi-web:1.0
+podman images
+
+# Clean up delete the image from your local storage
