@@ -1,0 +1,8 @@
+FROM registry.access.redhat.com/ubi8/ubi
+
+ENV NC_PORT=12345
+
+RUN yum install -y nmap-ncat; \
+    yum clean all
+
+ENTRYPOINT nc -kl $NC_PORT

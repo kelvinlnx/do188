@@ -1,0 +1,11 @@
+FROM registry.access.redhat.com/ubi8/ubi
+
+ENV MSG="Hi" NC_SVR="127.0.0.1" NC_PORT=12345
+
+COPY client /usr/local/bin/client
+
+RUN yum install -y nmap-ncat; \
+    yum clean all; \
+    chmod 755 /usr/local/bin/client
+
+ENTRYPOINT /usr/local/bin/client
