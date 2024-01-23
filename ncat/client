@@ -1,0 +1,11 @@
+#!/bin/bash
+
+CNT=1
+
+while true; do
+	echo "Sending \"$MSG\" $CNT time(s)" | nc $NC_SVR $NC_PORT
+	CNT=$[ $CNT + 1]
+	sleep 5
+done
+
+exit 0
