@@ -30,6 +30,6 @@ podman logs server
 Cleanup
 ```
 podman stop server client
-podman network delete abc
+podman network rm abc
 podman rmi nc-server:1.0 nc-client:1.0
 ```
