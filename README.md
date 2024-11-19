@@ -1,9 +1,10 @@
 # Trying out ncat server and client
 
-# go to the ncat directory
+go to the ncat directory
+```
 cd ncat
-
-# create the abc network & ensure the dns service is enabled
+```
+create the abc network & ensure the dns service is enabled
 podman network create abc
 podman network inspect abc
 
